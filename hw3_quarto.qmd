@@ -1,0 +1,99 @@
+---
+title: "Control Flows"
+format: html
+editor: visual
+---
+
+## Loading Files
+
+```{r}
+load("files/hw2_list.rda")
+```
+
+## Task 1: Control Flow Practice
+
+We are creating a status column in the data frames within the list
+
+```{r}
+bp_list$treatment$status <- character(20)
+bp_list$placebo$status <- character(10)
+```
+
+For the our dataframes (within the list), we are creating a for loop that follows the sequential logic of optimal (≤ 120), borderline (120 \< bp ≤ 130), and high (\> 130) to assign to the "status" column based on "post_bp"
+
+We can accomplish this by fetching the post_bp value for that record and updating the status value using a nested if/else statement.
+
+```{r}
+for (i in 1:nrow(bp_list$placebo)){
+  record_post_bp <- bp_list$placebo$post_bp[i]
+  if (record_post_bp <= 130){
+    if (record_post_bp <= 120) {
+      record_status <- "optimal"
+    } else {
+      record_status <- "borderline"
+    }
+  } else {
+    record_status <- "high"
+  } 
+  bp_list$placebo$status[i] <- record_status
+}
+
+for (i in 1:nrow(bp_list$treatment)){
+  record_post_bp <- bp_list$treatment$post_bp[i]
+  if (record_post_bp <= 130){
+    if (record_post_bp <= 120) {
+      record_status <- "optimal"
+    } else {
+      record_status <- "borderline"
+    }
+  } else {
+    record_status <- "high"
+  } 
+  bp_list$treatment$status[i] <- record_status
+}
+```
+
+## Task 2: Function Writing
+
+Now, we are going to create a function that does the following:
+
+1.  Accepts a list of data frames, a summary statistic and list of columns common between the two data frames
+2.  Default value for the summary statistic is "mean"
+3.  Default value for columns set (pre_bp,post_bp,diff_bp)
+4.  Dynamically iterate through list of data frames and columns
+5.  Dynamically assign names to values that will be returned as a list.
+6.  Returns named list of summary statistic for columns in each data frame
+
+```{r}
+retrieve_data <- function(list_of_df,summary_stat="mean",columns=list("pre_bp","post_bp","diff_bp")){
+  my_fun <- get(summary_stat)
+  list_of_values <- vector("list",length(list_of_df)*length(columns))
+  value_names <- vector("list",length(list_of_df)*length(columns))
+  for (i in 1:length(list_of_df)){
+    df_of_interest <- list_of_df[[i]]
+    df_name <- names(list_of_df[i])
+    list_position_start <- (i-1)*3
+    for (i in 1:length(columns)){
+      column_avg <- my_fun(df_of_interest[[columns[[i]]]])
+      list_of_values[list_position_start + i] <- column_avg
+      value_names[list_position_start + i] <- paste(df_name,columns[i],summary_stat,sep="_")
+    }
+  }
+  names(list_of_values) <- value_names
+  return(list_of_values)
+}
+```
+
+Now lets use this function with no summary stat as input (mean), "var", "sd", "min", and "max".
+
+Lets print the max_list to make sure the result is as expected
+
+```{r}
+mean_list <- retrieve_data(bp_list)
+var_list <- retrieve_data(bp_list,summary_stat="var")
+sd_list <- retrieve_data(bp_list,summary_stat="sd")
+min_list <- retrieve_data(bp_list,summary_stat="min")
+max_list <- retrieve_data(bp_list,summary_stat="max")
+
+max_list
+```
